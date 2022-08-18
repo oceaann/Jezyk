@@ -1,0 +1,33 @@
+{
+    "client": "836851213651017758",
+    "guild": "711537493283176448",
+    "owner": {
+        "id": "473466385222205452"
+    },
+    "status": {
+        "type": 1,
+        "name": "🦔 bit.ly/Jezykowa",
+        "url": "https://www.twitch.tv/twitch"
+    },
+    "color": {
+        "red": "#ff7272",
+        "green": "#bbff72",
+        "yellow": "#ffe572",
+        "blue": "#72bbff"
+    },
+    "emoji": {
+        "device": {
+            "desktop": "desktop",
+            "web": "web",
+            "mobile": "mobile"
+        },
+        "voice": {
+            "serverMute": "servermute",
+            "selfMute": "selfmute",
+            "selfDeaf": "selfdeaf",
+            "serverDeaf": "serverdeaf",
+            "selfVideo": "selfvideo",
+            "streaming": "streaming"
+        }
+    }
+}

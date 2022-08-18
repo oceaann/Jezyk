@@ -1,0 +1,22 @@
+{
+    "name": "jezyk",
+    "version": "1.0.0",
+    "description": "",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "nodemon . --no-warnings",
+        "list": "npm list"
+    },
+    "author": "Graficzek",
+    "license": "ISC",
+    "dependencies": {
+        "axios": "^0.27.2",
+        "canvas": "^2.9.3",
+        "chalk": "^4.1.2",
+        "discord.js": "^14.2.0",
+        "domcolor": "^1.0.1",
+        "dotenv": "^16.0.1",
+        "glob": "^8.0.3",
+        "nodemon": "^2.0.19"
+    }
+}
