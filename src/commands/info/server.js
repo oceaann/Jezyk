@@ -1,43 +1,25 @@
-const { ApplicationCommandOptionType, ClientUser, AttachmentBuilder, EmbedBuilder, Guild } = require('discord.js');
-const userProfileCanvas = require('../../utils/canvas/userProfile');
-const config = require('../../config/config.json');
+import { config, client } from "../../index.js";
+import {userToEmbedAuthor} from "../../lib/structures/Embed.js";
 
-module.exports = {
-    name: 'server',
-    description: 'Wyświetla informacje o serwerze',
+export const command = {
+    name: "server",
+    description: "Wyświetla informacje o serwerze",
     options: [],
-    execute: async ({ client, interaction }) => {
-        const embed = new client.embed(interaction.member.user).setColor(config.color.red).addFields(
-            {
-                name: 'Nazwa:',
-                value: interaction.guild.name,
-                inline: true,
-            },
-            {
-                name: 'Identyfikator:',
-                value: interaction.guild.id,
-                inline: true,
-            },
-            {
-                name: 'Opis:',
-                value: interaction.guild.description,
-                inline: false,
-            },
-            {
-                name: 'Aktywnosć:',
-                value: 'test',
-            }
-        );
-        console.log(
-            interaction.guild.members.cache.filter((presence) => {
-                presence.status == 'online';
-            }).length
-        );
-        console.log(
-            interaction.guild.members.cache.map((user) => {
-                if (user.presence) console.log(user.presence.status);
-            })
-        );
-        interaction.reply({ embeds: [embed] });
+    execute: async (interaction, options) => {
+        const { member: { guild } } = interaction
+        const fields = [
+            { name: 'Nazwa:', value: guild.name, inline: true },
+            { name: 'Identyfikator:', value: guild.id, inline: true },
+            { name: 'Opis:', value: guild.description, inline: false },
+            { name: 'Aktywnosć:', value: 'test' }
+        ];
+
+        const embed = {
+            color: config.color.red,
+            author: userToEmbedAuthor(interaction.member),
+            fields
+        }
+
+        await interaction.createMessage({ embeds: [embed] });
     },
 };

@@ -1,96 +1,84 @@
-const { ApplicationCommandOptionType, ClientUser, AttachmentBuilder } = require('discord.js');
-const userProfileCanvas = require('../../utils/canvas/userProfile');
-const config = require('../../config/config.json');
-const { guilds } = require('../..');
+import { userProfileCanvas } from "../../utils/canvas/userProfile.js";
+import { config, client } from "../../index.js";
+import { Constants } from "eris"
+import {userToEmbedAuthor} from "../../lib/structures/Embed.js";
 
-module.exports = {
+export const command = {
     name: 'user',
     description: 'Wyświetla informacje o użytkowniku',
     options: [
         {
             name: 'user',
             description: 'Użytkownik o jakim chcesz dostać informacje',
-            type: ApplicationCommandOptionType.User,
+            type: Constants.ApplicationCommandOptionTypes.USER,
             required: false,
         },
     ],
-    execute: async ({ client, interaction }) => {
-        const member = interaction.options.getMember('user') ? interaction.options.getMember('user') : interaction.member;
-        let devices = [];
+    execute: async (interaction, options) => {
+        const memberID = options.get("user") || interaction.member.id;
+        if(!memberID) return
 
-        if (member?.presence?.clientStatus && member.presence !== null)
-            await Object.keys(member.presence.clientStatus).map((device) => {
-                devices.push(config.emoji.device[device]);
+        const member = await client.getRESTGuildMember(interaction.guildID, memberID)
+        const devices = Object.keys(member.clientStatus || {}).map((d) => config.emoji.device[d]);
+
+        const attachment = { file: await userProfileCanvas(member), name: 'profil.png' };
+
+        const roles = member.roles.sort(
+            (a, b) => member.guild.roles.get(b).position - member.guild.roles.get(a).position
+        );
+
+        const role = member.guild.roles.get(roles[0])
+
+        const fields = [
+            { name: 'Identyfikator:', value: member.id, inline: true },
+            { name: 'Wzmianka:', value: `<@${member.id}>`, inline: true,},
+            { name: 'Zdjęcie:',
+                value: `[Profilowe](${member.user.avatarURL})${
+                    member.avatarURL ? '' : `, [Serwerowe](${member.avatarURL})`
+                }`,
+                inline: false,
+            },
+            {
+                name: 'Dołączył do serwera:',
+                value: `<t:${Math.round(member.joinedAt / 1000)}:d>`,
+                inline: true,
+            },
+            {
+                name: 'Dołączył do discorda:',
+                value: `<t:${Math.round(member.user.createdAt / 1000)}:d>`,
+                inline: true,
+            },
+            {
+                name: 'Aktywność:',
+                value: devices.length !== 0 ? devices.join(' ') : 'Użytkownik nie jest aktywny',
+                inline: false,
+            },
+        ]
+
+        if (member.voiceState?.channelID) {
+            let value = `${member.voiceState.mute}`;
+            if (member.voiceState.mute) value += ` ${config.emoji.voice.serverMute}`;
+            else if (member.voiceState.selfMute) value += ` ${config.emoji.voice.selfMute}`;
+
+            if (member.voiceState.deaf) value += ` ${config.emoji.voice.serverDeaf}`;
+            else if (member.voiceState.selfDeaf) ` ${config.emoji.voice.selfDeaf}`;
+
+            if (member.voiceState.selfStream) value += ` ${config.emoji.voice.streaming}`;
+
+            fields.push({
+                name: 'Połączony:',
+                value,
+                inline: true
             });
-
-        const user = await client.users.fetch(member.user.id, { force: true });
-        const memberUser = await interaction.guild.members.fetch(member.user.id, { force: true });
-        const attachment = new AttachmentBuilder(await userProfileCanvas(user, memberUser), {
-            name: 'Profil.png',
-        });
-
-        const embed = new client.embed(user)
-            .setColor(member.roles.highest.color)
-            .setImage(`attachment://${attachment.name}`)
-            .addFields([
-                {
-                    name: 'Identyfikator:',
-                    value: user.id,
-                    inline: true,
-                },
-                {
-                    name: 'Wzmianka:',
-                    value: member.toString(),
-                    inline: true,
-                },
-                {
-                    name: 'Zdjęcie:',
-                    value: `[Profilowe](${member.user.displayAvatarURL()})${
-                        user.displayAvatarURL() === member.displayAvatarURL()
-                            ? ''
-                            : `, [Serwerowe](${member.displayAvatarURL()})`
-                    }`,
-                    inline: false,
-                },
-                {
-                    name: 'Dołączył do serwera:',
-                    value: `<t:${Math.round(member.joinedTimestamp / 1000)}:d>`,
-                    inline: true,
-                },
-                {
-                    name: 'Dołączył do discorda:',
-                    value: `<t:${Math.round(member.user.createdTimestamp / 1000)}:d>`,
-                    inline: true,
-                },
-                {
-                    name: 'Aktywność:',
-                    value: devices.length !== 0 ? devices.join(' ') : 'Użytkownik nie jest aktywny',
-                    inline: false,
-                },
-            ]);
-
-        if (member.voice.channel) {
-            let value = `${member.voice.channel}`;
-            if (member.voice.serverMute) value += ` ${config.emoji.voice.serverMute}`;
-            else if (member.voice.selfMute) value += ` ${config.emoji.voice.selfMute}`;
-
-            if (member.voice.serverDeaf) value += ` ${config.emoji.voice.serverDeaf}`;
-            else if (member.voice.selfDeaf) ` ${config.emoji.voice.selfDeaf}`;
-
-            if (member.voice.streaming) value += ` ${config.emoji.voice.streaming}`;
-
-            embed.addFields([
-                {
-                    name: 'Połączony:',
-                    value,
-                    inline: true,
-                },
-            ]);
         }
 
-        interaction.reply({
-            embeds: [embed],
-            files: [attachment],
-        });
+        const embed = {
+            color: role.color,
+            image: { url: "attachment://profil.png" },
+            author: userToEmbedAuthor(interaction.member),
+            fields
+        }
+
+        await interaction.createFollowup({ embed }, attachment);
     },
 };
