@@ -1,25 +1,25 @@
-const chalk = require('chalk');
-const config = require('../../config/config.json');
+import chalk from "chalk";
+import { config, client, commands } from "../../index.js"
 
-module.exports = {
-    name: 'ready',
-    run: async (client) => {
-        console.log(
-            chalk.hex(config.color.red)(
-                chalk.hex(config.color.yellow)(client.user.username + '#' + client.user.discriminator) +
-                    ' jest gotowy do działania! Obsługuje już ' +
-                    chalk.hex(config.color.yellow)(client.users.cache.size) +
-                    ' użytkowników na ' +
-                    chalk.hex(config.color.yellow)(client.guilds.cache.size) +
-                    ' serwerach'
-            )
-        );
+const name = 'ready'
+const run = async () => {
+    console.log(
+        chalk.hex(config.color.red) (
+            chalk.hex(config.color.yellow)(client.user.username + '#' + client.user.discriminator) +
+            ' jest gotowy do działania! Obsługuje już ' +
+            chalk.hex(config.color.yellow)(client.users.size) + ' użytkowników na ' +
+            chalk.hex(config.color.yellow)(client.guilds.size) + ' serwerach'
+        )
+    );
 
-        const commands = client.commands.toJSON();
+    // client.guilds.cache.map(async ({ commands }) => {
+    //     commands.set(commands);
+    // })
+    const rawCommands = commands
+        .map(({ name, description, options }) => ({ name, description, options, type: 1 }));
 
-        // client.guilds.cache.map(async ({ commands }) => {
-        //     commands.set(commands);
-        // })
-        client.guilds.cache.get(config.guild).commands.set(commands);
-    },
+    await client.bulkEditGuildCommands(config.guild, rawCommands);
+
 };
+
+export { name, run }
