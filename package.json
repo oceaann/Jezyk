@@ -7,6 +7,7 @@
         "start": "nodemon . --no-warnings",
         "list": "npm list"
     },
+    "type": "module",
     "author": "Graficzek",
     "license": "ISC",
     "dependencies": {
