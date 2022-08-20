@@ -1,63 +1,69 @@
-const { createCanvas, loadImage } = require('canvas');
-const axios = require('axios');
-const domcolor = require('domcolor');
+import { createCanvas, loadImage } from 'canvas';
+import axios from 'axios';
+import domcolor from 'domcolor';
+import { Constants } from "eris";
+const { UserFlags: {
+    DISCORD_STAFF, PARTNER, HYPESQUAD, BUG_HUNTER_LEVEL_1, BUG_HUNTER_LEVEL_2,
+    HYPESQUAD_ONLINE_HOUSE_1, HYPESQUAD_ONLINE_HOUSE_2, HYPESQUAD_ONLINE_HOUSE_3,
+    PREMIUM_EARLY_SUPPORTER, VERIFIED_DEVELOPER, CERTIFIED_MODERATOR
+} } = Constants
 
-module.exports = async (user, member) => {
-    async function returnBuffer(url) {
-        const response = await axios.get(url, {
-            responseType: 'arraybuffer',
-        });
-        return Buffer.from(response.data, 'utf-8');
-    }
-    let banner;
+const flags = {
+    [DISCORD_STAFF]: './src/utils/canvas/images/discordStaff.png',
+    [PARTNER]: './src/utils/canvas/images/discordPartner.png',
+    [HYPESQUAD]: './src/utils/canvas/images/hypesquadEvents.png',
+    [BUG_HUNTER_LEVEL_1]: './src/utils/canvas/images/bugHunter.png',
+    [HYPESQUAD_ONLINE_HOUSE_1]: './src/utils/canvas/images/braveryHouse.png',
+    [HYPESQUAD_ONLINE_HOUSE_2]: './src/utils/canvas/images/brillanceHouse.png',
+    [HYPESQUAD_ONLINE_HOUSE_3]: './src/utils/canvas/images/balanceHouse.png',
+    [PREMIUM_EARLY_SUPPORTER]: './src/utils/canvas/images/earlySupporter.png',
+    [BUG_HUNTER_LEVEL_2]: './src/utils/canvas/images/bugHunter2.png',
+    [VERIFIED_DEVELOPER]: './src/utils/canvas/images/verifiedDeveloper.png',
+    [CERTIFIED_MODERATOR]: './src/utils/canvas/images/discordModerator.png',
+    NitroUser: './src/utils/canvas/images/nitroUser.png',
+    ServerBooster: './src/utils/canvas/images/serverBoost.png',
+};
 
-    const flags = {
-        Staff: './src/utils/canvas/images/discordStaff.png',
-        Partner: './src/utils/canvas/images/discordPartner.png',
-        Hypesquad: './src/utils/canvas/images/hypesquadEvents.png',
-        BugHunterLevel1: './src/utils/canvas/images/bugHunter.png',
-        HypeSquadOnlineHouse1: './src/utils/canvas/images/braveryHouse.png',
-        HypeSquadOnlineHouse2: './src/utils/canvas/images/brillanceHouse.png',
-        HypeSquadOnlineHouse3: './src/utils/canvas/images/balanceHouse.png',
-        PremiumEarlySupporter: './src/utils/canvas/images/earlySupporter.png',
-        BugHunterLevel2: './src/utils/canvas/images/bugHunter2.png',
-        VerifiedDeveloper: './src/utils/canvas/images/verifiedDeveloper.png',
-        CertifiedModerator: './src/utils/canvas/images/discordModerator.png',
-        NitroUser: './src/utils/canvas/images/nitroUser.png',
-        ServerBooster: './src/utils/canvas/images/serverBoost.png',
-    };
+const returnBuffer = async (url) => {
+    const response = await axios.get(url, { responseType: 'arraybuffer' });
+    return Buffer.from(response.data, 'utf-8');
+}
 
-    const discriminators = [
-        '1111',
-        '2222',
-        '3333',
-        '4444',
-        '5555',
-        '6666',
-        '7777',
-        '8888',
-        '9999',
-        '0001',
-        '1337',
-        '1234',
-        '4321',
-        '2137',
-        '6969',
-        '4200',
-    ];
+const discriminators = [
+    '1111',
+    '2222',
+    '3333',
+    '4444',
+    '5555',
+    '6666',
+    '7777',
+    '8888',
+    '9999',
+    '0001',
+    '1337',
+    '1234',
+    '4321',
+    '2137',
+    '6969',
+    '4200',
+];
+
+export const userProfileCanvas = async (member) => {
+    const { user } = member;
 
     const canvas = createCanvas(960, 650);
     const ctx = canvas.getContext('2d');
 
-    avatar = await loadImage(user.displayAvatarURL({ size: 4096, extension: 'png' }));
+    const avatar = await loadImage(user.avatarURL);
+
     if (user.banner) {
-        banner = await loadImage(user.bannerURL({ extension: 'png' }));
+        const banner = await loadImage(user.bannerURL({ extension: 'png' }));
         ctx.drawImage(banner, 0, 0, canvas.width, (canvas.height * 60) / 100);
     } else if (user.accentColor) {
         ctx.fillStyle = `#${user.accentColor.toString(16)}`;
         ctx.fillRect(0, 0, canvas.width, (canvas.height * 60) / 100);
     } else {
-        let color = await domcolor(await returnBuffer(user.displayAvatarURL({ size: 4096, extension: 'png' })));
+        let color = await domcolor(await returnBuffer(user.avatarURL));
         ctx.fillStyle = `#${color.hex}`;
         ctx.fillRect(0, 0, canvas.width, (canvas.height * 60) / 100);
     }
@@ -80,29 +86,26 @@ module.exports = async (user, member) => {
         (canvas.height * 85) / 100
     );
 
-    let badges = user.flags.toArray();
+    const badges = [];
 
-    let nitro;
-    if (user.avatar.match(/^a_/)) nitro = true;
-    if (user.banner) nitro = true;
-    discriminators.forEach((discriminator) => {
-        if (discriminator == user.discriminator) nitro = true;
-    });
-    if (nitro) badges.unshift('NitroUser');
-    if (member.premiumSinceTimestamp) badges.unshift('ServerBooster');
+    const nitro = user.avatar.match(/^a_/) || user.banner || discriminators.includes(user.discriminator);
+    if (nitro) badges.push('NitroUser');
 
-    for (let i = 0; i < badges.length; i++) {
-        if (flags[badges[i]]) {
-            let badge = await loadImage(flags[badges[i]]);
-            ctx.drawImage(badge, canvas.width - 20 - 64 * (i + 1), (canvas.height * 62.5) / 100, 64, 64);
-        }
+    if (member.premiumSince) badges.push('ServerBooster');
+
+    let i = 0;
+    for (const [flag, path] of Object.entries(flags)) {
+        if (!badges.includes(flag) && (user.publicFlags & flag) === 0) continue
+        const image = await loadImage(path);
+        ctx.drawImage(image, canvas.width - 20 - 64 * (i + 1), (canvas.height * 62.5) / 100, 64, 64);
+        i++
     }
+
     if (user.bot) {
-        if (badges.includes('VerifiedBot')) {
-            bot = await loadImage('./src/utils/canvas/images/verifiedBot.png');
-        } else {
-            bot = await loadImage('./src/utils/canvas/images/bot.png');
-        }
+        const bot = await loadImage(`./src/utils/canvas/images/${
+            user.publicFlags & Constants.UserFlags.VERIFIED_BOT ? "verifiedBot" : "bot"
+        }.png`)
+
         ctx.drawImage(
             bot,
             (canvas.width * 27.5) / 100 / 2 + ctx.measureText(`${user.username}#${user.discriminator}`).width,
